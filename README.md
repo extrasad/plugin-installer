@@ -12,6 +12,6 @@ To use this plugin, you have to do the following steps:
 you don't use the plugin's slug, there will be a fatal error).
 3. Uncomment the line indicated in the plugin-installer.php file.
 4. After install all the plugins, proceed to comment the action line you uncommented before in the step 3, and delete
-all the plugins from the array 'plugins'. :!:DON'T LOAD THE PAGE AGAIN,
-OR NAVIGATE IN THE PAGE UNTIL COMMENT THE ACTION LINE:!:
+all the plugins from the array 'plugins'. :heavy_exclamation_mark:DON'T LOAD THE PAGE AGAIN,
+OR NAVIGATE IN THE PAGE UNTIL COMMENT THE ACTION LINE:heavy_exclamation_mark:
 5. Refresh the page, and enjoy!!!
