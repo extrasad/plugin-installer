@@ -41,9 +41,9 @@ class PluginInstaller{
 		/* Use this array to determinate the plugins that will be downloaded,
     installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
     Example : 'jetpack', 'wordpress-seo' */
-		$this->plugins = array(
+		//$this->plugins = array(
       //'jetpack'
-    );
+    //);
     /* Use this array to determinate the local or private plugins that will
     be downloaded, installed and activated. Provide the array with the
     full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
@@ -57,22 +57,48 @@ class PluginInstaller{
 
     By default is an empty array.
     */
-    $this->local_plugins=array(
+    //$this->local_plugins=array(
     /*  array(
         'path' => '/home/user/wordpress-seo.7.1.zip',
         'slug' => 'wordpress-seo'
         ) */    
-    );
+    //);
 
 		//Uncomment the line below if you want to use the plugin.
-		add_action('init', $this->takePlugins($this->plugins, $this->local_plugins));		
-	}
+    //add_action('init', $this->takePlugins($this->plugins, $this->local_plugins));
+    add_action( 'admin_menu', array( $this, 'plginstMenu' ));
+    add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
+    add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
+  }
+  
+  //Main Menu
+
+  public function plginstMenu(){
+    add_options_page( 'Plugin Installer', 
+    'Plugin Installer', 
+    'manage_options', 
+    'plugin-installer', 
+    array($this, 'plginstOptionsPage'));
+  }
+
+  public function plginstOptionsPage() {
+    if (!current_user_can('manage_options')) {
+      return;
+    }
+    ?>
+    <div class="wrap">
+        <h1><?= esc_html(get_admin_page_title()); ?></h1>
+        <div class="wrap">
+
+          <button id="install-action" class="button button-primary">Install Plugins</button>
+        </div>
+    </div>
+    <?php
+  }
 
   // Main plugin function.
-  public function takePlugins($plugins, $local_plugins){
+  public function takePlugins(){
     include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
-    $success = '<p> plugin installed and activated </p>';
-    $failure ='<p> cannot install plugin </p>';
     $args = array(
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => false
@@ -107,11 +133,20 @@ class PluginInstaller{
         /* Checking if the install process was successful or failed to
         finish the process*/
           if($install === true){
-          echo $success;		
+            $status = 'success';
+            $msg = 'Successfully installed.';
           }else{
-            echo $failure;
+            $status = 'failed';
+            $msg = 'There was an error installing';
           }
         }
+
+        $json = array(
+          'status' => $status,
+          'msg' => $msg,
+        );
+
+        wp_send_json($json);
       }		
     }
     /*Checking if the list of plugins is empty, if isn't empty
@@ -130,16 +165,25 @@ class PluginInstaller{
           $install_local = $this->PluginActivate($this->install_local);
           /* Checking if the install process was successful or failed to
           finish the process*/
-          if($install_local === true){
-          echo $success;		
-          }else{
-            echo $failure;
-            }
+         if($install_local === true){
+           $status = 'success';
+          $msg = 'Successfully installed.';
+        }else{
+          $status = 'failed';
+          $msg = 'There was an error installing';
           }
-        }						
-      }		
+          $json = array(
+            'status' => $status,
+            'msg' => $msg,
+          );
+
+          wp_send_json($json);
+        }
+      }						
     }
-  
+      wp_die();
+    }
+
   // Function to download the plugin.
   public function PluginDownload($url, $path){
       $ch = curl_init($url);
@@ -211,6 +255,18 @@ class PluginInstaller{
     }
     else
     	return false;
+  }
+
+  public function enqueue_scripts(){
+    wp_enqueue_script(
+      'ajax-script',
+      plugin_dir_url( __FILE__ ) . 'assets/installer.js',
+      array( 'jquery' )
+  );
+
+  //wp_localize_script( 'ajax-script', 'plugin_installer', array());
+
+  wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
   }
 }
 
