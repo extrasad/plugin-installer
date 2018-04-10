@@ -22,10 +22,9 @@ if ( ! function_exists( 'add_action' ) ) {
 
 class PluginInstaller{
 
-	private $plugins;
   private $install;
   private $install_local;
-	private $api;
+  private $api;
   private $plugin_folder;
   private $local_plugins;
   private $plugin_folder_local;
@@ -41,9 +40,8 @@ class PluginInstaller{
 		/* Use this array to determinate the plugins that will be downloaded,
     installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
     Example : 'jetpack', 'wordpress-seo' */
-		//$this->plugins = array(
-      //'jetpack'
-    //);
+
+
     /* Use this array to determinate the local or private plugins that will
     be downloaded, installed and activated. Provide the array with the
     full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
@@ -65,10 +63,11 @@ class PluginInstaller{
     //);
 
 		//Uncomment the line below if you want to use the plugin.
-    //add_action('init', $this->takePlugins($this->plugins, $this->local_plugins));
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
     add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
+    add_action( 'wp_ajax_plginstOptionsPage', array( $this, 'plginstOptionsPage') );
+    
   }
   
   //Main Menu
@@ -87,26 +86,38 @@ class PluginInstaller{
     }
     ?>
     <div class="wrap">
-        <h1><?= esc_html(get_admin_page_title()); ?></h1>
-        <div class="wrap">
-
-          <button id="install-action" class="button button-primary">Install Plugins</button>
-        </div>
+      <h1><?= esc_html(get_admin_page_title()); ?></h1>
+        <?php 
+          if (isset($_POST['plugins_preview'])){
+            $plugins = $_POST['plugins_preview'];
+            foreach ($plugins as $plugin) {
+              $html = sprintf('<p>%s is being installed<p>', esc_html($plugin));
+            }
+          }         
+        ?>
+      <button id="install-action" class="button button-primary">Install Plugins</button>
+      <div id="load-spinner"></div>
     </div>
     <?php
   }
 
   // Main plugin function.
   public function takePlugins(){
+    
     include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
     $args = array(
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => false
     );
+
+    if(isset($_POST['plugins'])){
+      $plugins = array();
+      $plugins = array($_POST['plugins']);
+
     /*Checking if the list of plugins is empty, if isn't empty
     execute the request to the API of wordpress.org*/
-    if(!empty($this->plugins)){
-		  foreach($this->plugins as $plugin){
+    if(!empty($plugins)){
+		  foreach($plugins as $plugin){
 			  $this->api = plugins_api( 'plugin_information', array(
 				  'slug' => $plugin,
 				  'fields' => array(
@@ -149,38 +160,40 @@ class PluginInstaller{
         wp_send_json($json);
       }		
     }
+  }
     /*Checking if the list of plugins is empty, if isn't empty
     execute unzip process.*/
-    if(!empty($this->local_plugins)){
-      foreach($this->local_plugins as $key => $plugins){
-        $unpack_local= $this->PluginUnpack($this->local_args, $plugins['path']);
-        /* Checking if the unzip process was successful or failed to
-        continue the process*/
-        if($unpack_local === true){
-          $this->plugin_folder_local = ("/".$plugins['slug']);
-          $var = get_plugins($this->plugin_folder_local);
-		      foreach(array_keys($var) as $key){
-            $this->install_local = $this->plugin_folder_local."/".$key;
-          }
-          $install_local = $this->PluginActivate($this->install_local);
+   
+   // if(!empty($this->local_plugins)){
+   //   foreach($this->local_plugins as $key => $plugins){
+   //     $unpack_local= $this->PluginUnpack($this->local_args, $plugins['path']);
+   //     /* Checking if the unzip process was successful or failed to
+   //     continue the process*/
+   //     if($unpack_local === true){
+   //       $this->plugin_folder_local = ("/".$plugins['slug']);
+   //       $var = get_plugins($this->plugin_folder_local);
+	 // 	      foreach(array_keys($var) as $key){
+   //         $this->install_local = $this->plugin_folder_local."/".$key;
+   //       }
+   //       $install_local = $this->PluginActivate($this->install_local);
           /* Checking if the install process was successful or failed to
           finish the process*/
-         if($install_local === true){
-           $status = 'success';
-          $msg = 'Successfully installed.';
-        }else{
-          $status = 'failed';
-          $msg = 'There was an error installing';
-          }
-          $json = array(
-            'status' => $status,
-            'msg' => $msg,
-          );
+   //      if($install_local === true){
+   //        $status = 'success';
+   //       $msg = 'Successfully installed.';
+   //     }else{
+   //       $status = 'failed';
+   //       $msg = 'There was an error installing';
+   //       }
+   //       $json = array(
+   //         'status' => $status,
+   //         'msg' => $msg,
+   //       );
 
-          wp_send_json($json);
-        }
-      }						
-    }
+   //       wp_send_json($json);
+   //     }
+   //   }						
+   // }
       wp_die();
     }
 
@@ -257,16 +270,14 @@ class PluginInstaller{
     	return false;
   }
 
-  public function enqueue_scripts(){
+  public function enqueue_scripts() {
     wp_enqueue_script(
       'ajax-script',
       plugin_dir_url( __FILE__ ) . 'assets/installer.js',
       array( 'jquery' )
-  );
+    );
 
-  //wp_localize_script( 'ajax-script', 'plugin_installer', array());
-
-  wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
+    wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
   }
 }
 
