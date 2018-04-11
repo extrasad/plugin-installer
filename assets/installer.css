@@ -7,10 +7,38 @@
     height: 15px;
     margin-left: .4rem;
     display: inline-block;
-    animation: spin 2s linear infinite;
+    animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+.checkmark{
+    display:inline-block;
+  }
+
+.checkmark:after{
+    /*Add another block-level blank space*/
+    content: '';
+    display: block;
+
+    /*Make it a small rectangle so the border will create an L-shape*/
+    width: 3px;
+    height: 6px;
+
+    /*Add a white border on the bottom and left, creating that 'L' */
+    border: solid green;
+    border-width: 0 2px 2px 0;
+
+    /*Rotate the L 45 degrees to turn it into a checkmark*/
+    transform: rotate(45deg);
+}
+
+#load-spinner {
+    display: inline-block;
+    color: red;
+    font-size: 20px;
+    padding-top: .3rem;
 }

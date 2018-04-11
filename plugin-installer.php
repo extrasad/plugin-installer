@@ -26,9 +26,11 @@ class PluginInstaller{
   private $install_local;
   private $api;
   private $plugin_folder;
-  private $local_plugins;
   private $plugin_folder_local;
   private $local_args;
+  private $mydirectory;
+  private $extract_directory;
+  private $local_plugins;
 
 
   public function __construct(){
@@ -37,37 +39,27 @@ class PluginInstaller{
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => true
     );
-		/* Use this array to determinate the plugins that will be downloaded,
-    installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
-    Example : 'jetpack', 'wordpress-seo' */
-
-
-    /* Use this array to determinate the local or private plugins that will
-    be downloaded, installed and activated. Provide the array with the
-    full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
-    and with the slug of the plugin, example : 'wordpress-seo'.
-    Full example, insert this for each plugin to include: 
     
-      array(
-      'path' => '/home/user/track-message.zip',
-      'slug' => 'track-message'
-      ),
+    // PATH TO SELECT ZIPS AND EXTRACT INTO YOUR PLUGINS FOLDER - LOCAL PLUGIN INSTALLATION
+    
+    $this->mydirectory = '/home/abdiangel/Escritorio/';
+    $this->extract_directory = '/opt/lampp/htdocs/wp-demo/wp-content/plugins/'; 
 
-    By default is an empty array.
-    */
-    //$this->local_plugins=array(
-    /*  array(
-        'path' => '/home/user/wordpress-seo.7.1.zip',
-        'slug' => 'wordpress-seo'
-        ) */    
-    //);
+    //INSERT THE EXACT NAME OF THE FILE EXAMPLE: 'track-message.zip'
+
+   /* $this->local_plugins = array(
+      'track-message.zip','cookie-notice.zip'
+    );*/
+
+    // Go to line 264 to get information about plugins installation
+
+    // Go to line 269 to get information about local plugins installation
 
 		//Uncomment the line below if you want to use the plugin.
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
     add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
-    add_action( 'wp_ajax_plginstOptionsPage', array( $this, 'plginstOptionsPage') );
-    
+    //add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins')); AJAX FOR LOCAL PLUGIN INSTALLATION
   }
   
   //Main Menu
@@ -87,18 +79,22 @@ class PluginInstaller{
     ?>
     <div class="wrap">
       <h1><?= esc_html(get_admin_page_title()); ?></h1>
-        <?php 
-          if (isset($_POST['plugins_preview'])){
-            $plugins = $_POST['plugins_preview'];
-            foreach ($plugins as $plugin) {
-              $html = sprintf('<p>%s is being installed<p>', esc_html($plugin));
-            }
-          }         
-        ?>
+      <h3>Plugins To Install</h3>
+      <ul id="plugin-slugs">
+      </ul>
       <button id="install-action" class="button button-primary">Install Plugins</button>
       <div id="load-spinner"></div>
+      <h3>Local Plugins To Install</h3>
+      <!--<form id="file-form" action="" method="POST">
+        <input type="file" id="file-select" name="zips[]" multiple/>
+        <button type="submit" id="upload-button">Upload</button>
+      </form> -->
+      <ul id="local-plugin-slugs">
+      <?php $this->viewZipFiles($mydirectory); ?>
+      </ul>
     </div>
     <?php
+    wp_die();
   }
 
   // Main plugin function.
@@ -152,50 +148,82 @@ class PluginInstaller{
           }
         }
 
-        $json = array(
-          'status' => $status,
-          'msg' => $msg,
-        );
+          $json = array(
+            'status' => $status,
+            'msg' => $msg,
+          );
 
-        wp_send_json($json);
-      }		
-    }
+          wp_send_json($json);
+        }		
+      }
+    }    
+    wp_die();
+
+    return $this;
   }
-    /*Checking if the list of plugins is empty, if isn't empty
-    execute unzip process.*/
-   
-   // if(!empty($this->local_plugins)){
-   //   foreach($this->local_plugins as $key => $plugins){
-   //     $unpack_local= $this->PluginUnpack($this->local_args, $plugins['path']);
-   //     /* Checking if the unzip process was successful or failed to
-   //     continue the process*/
-   //     if($unpack_local === true){
-   //       $this->plugin_folder_local = ("/".$plugins['slug']);
-   //       $var = get_plugins($this->plugin_folder_local);
-	 // 	      foreach(array_keys($var) as $key){
-   //         $this->install_local = $this->plugin_folder_local."/".$key;
-   //       }
-   //       $install_local = $this->PluginActivate($this->install_local);
-          /* Checking if the install process was successful or failed to
-          finish the process*/
-   //      if($install_local === true){
-   //        $status = 'success';
-   //       $msg = 'Successfully installed.';
-   //     }else{
-   //       $status = 'failed';
-   //       $msg = 'There was an error installing';
-   //       }
-   //       $json = array(
-   //         'status' => $status,
-   //         'msg' => $msg,
-   //       );
 
-   //       wp_send_json($json);
-   //     }
-   //   }						
-   // }
-      wp_die();
+  // WIP: FUNCTION TO INSTALL LOCAL PLUGINS ----------------------------------------------- //////
+
+  /*public function extractLocalPlugins() {
+
+
+    if (isset($_POST['my_directory']) && isset($_POST['extract_directory']) && isset($_POST['upload']))  {
+      define("UPLOAD_DIR", $_POST['my_directory']);
+      $extract_directory = $_POST['extract_directory'];
+      echo $extract_directory .'</br>';
+      echo $mydirectory .'</br>';
+
+      if (!empty($_FILES["zip_files"])) {
+        $myFile = $_FILES["zip_files"];
+    
+        if ($myFile["error"] !== UPLOAD_ERR_OK) {
+            echo "<p>An error occurred.</p>";
+            exit;
+        }
+    
+        // ensure a safe filename
+        $name = preg_replace("/[^A-Z0-9._-]/i", "_", $myFile["name"]);
+    
+        // don't overwrite an existing file
+        $i = 0;
+        $parts = pathinfo($name);
+        while (file_exists(UPLOAD_DIR . $name)) {
+            $i++;
+            $name = $parts["filename"] . "-" . $i . "." . $parts["extension"];
+        }
+    
+        // preserve file from temporary directory
+        $success = move_uploaded_file($myFile["tmp_name"],
+            UPLOAD_DIR . $name);
+        if (!$success) { 
+            echo "<p>Unable to save file.</p>";
+            exit;
+        }
+    
+        // set proper permissions on the new file
+        chmod(UPLOAD_DIR . $name, 0644);
+      }
+          // directory we want to scan
+      $dircontents = scandir($mydirectory);
+    
+      // list the contents
+      foreach ($dircontents as $file) {
+        $extension = pathinfo($file, PATHINFO_EXTENSION);
+        if ($extension == 'zip') {
+          echo "<li>$file</li>";
+          $res = $zip->open($file);
+          if ($res === TRUE) {
+            $zip->extractTo($extract_directory);
+            $zip->close();
+            echo 'ok';
+          } else {
+            echo 'failed';
+          }
+        }  
+      }
     }
+    wp_die();
+  }*/
 
   // Function to download the plugin.
   public function PluginDownload($url, $path){
@@ -270,12 +298,43 @@ class PluginInstaller{
     	return false;
   }
 
+  public function viewZipFiles() {
+
+    $dircontents = scandir($this->mydirectory);
+    
+    // list the contents
+    foreach ($dircontents as $file) {
+      $extension = pathinfo($file, PATHINFO_EXTENSION);
+      if ($extension == 'zip') {
+        echo "<li>$file</li>";
+      }
+    }
+    return $this;
+  }
+  
   public function enqueue_scripts() {
     wp_enqueue_script(
       'ajax-script',
       plugin_dir_url( __FILE__ ) . 'assets/installer.js',
       array( 'jquery' )
     );
+
+    wp_localize_script(
+      'ajax-script', 'ajax_object', array(
+        /* Use this array to determinate the plugins that will be downloaded,
+        installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
+        Example : 'jetpack', 'uk-cookie-consent' */
+        // UNCOMMENT ARRAY BELOW IF YOU WANT TO INSTALL PLUGINS FROM PLUGINS REPOSITORIES
+        'plugins' => array(
+          'jetpack', 'wordpress-seo'
+        )
+        /*
+        Use this array to determinate the local or private plugins that will
+        be downloaded, installed and activated. Provide the array with the
+        full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
+        and with the slug of the plugin, example : 'wordpress-seo'.
+        Full example, insert this for each plugin to include:*/
+      ));
 
     wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
   }
