@@ -47,9 +47,12 @@ class PluginInstaller{
 
     //INSERT THE EXACT NAME OF THE FILE EXAMPLE: 'track-message.zip'
 
-   /* $this->local_plugins = array(
-      'track-message.zip','cookie-notice.zip'
-    );*/
+    //$this->local_plugins=array(
+      /*  array(
+          'path' => '/home/user/wordpress-seo.7.1.zip',
+          'slug' => 'wordpress-seo'
+          ) */    
+     // );
 
     // Go to line 264 to get information about plugins installation
 
@@ -59,6 +62,7 @@ class PluginInstaller{
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
     add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
+    add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins') );
     //add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins')); AJAX FOR LOCAL PLUGIN INSTALLATION
   }
   
@@ -85,12 +89,12 @@ class PluginInstaller{
       <button id="install-action" class="button button-primary">Install Plugins</button>
       <div id="load-spinner"></div>
       <h3>Local Plugins To Install</h3>
-      <!--<form id="file-form" action="" method="POST">
-        <input type="file" id="file-select" name="zips[]" multiple/>
-        <button type="submit" id="upload-button">Upload</button>
-      </form> -->
+      <input type="file" id="localPluginsZip" name="plugins_zip[]" multiple></input>
+      <br/>
+      <button id="install-action2" class="button button-primary">Install Local Plugins</button>
+      <div id="load-spinner2"></div>
+      <h4>Plugins to be Unzip: </h4>
       <ul id="local-plugin-slugs">
-      <?php $this->viewZipFiles($mydirectory); ?>
       </ul>
     </div>
     <?php
@@ -156,74 +160,51 @@ class PluginInstaller{
           wp_send_json($json);
         }		
       }
-    }    
-    wp_die();
-
+    }
+    wp_die();  
     return $this;
+    }
+
+  public function extractLocalPlugins(){
+     /*Checking if the list of plugins is empty, if isn't empty
+    execute unzip process.*/
+    if (isset($_POST['local_plugins'])){
+      $local_plugins = $_FILES['plugins_zip'];
+
+      if(!empty($local_plugins)){
+        foreach($local_plugins as $plugins){
+          print_r($plugins['tmp_name']);
+          $unpack_local= $this->PluginUnpack($this->local_args, $plugins['tmp_name']);
+          /* Checking if the unzip process was successful or failed to
+          continue the process*/
+          if($unpack_local === true){
+            $this->plugin_folder_local = ("/".$plugins['name']);
+            $var = get_plugins($this->plugin_folder_local);
+            foreach(array_keys($var) as $key){
+              $this->install_local = $this->plugin_folder_local."/".$key;
+            }
+            $install_local = $this->PluginActivate($this->install_local);
+            /* Checking if the install process was successful or failed to
+            finish the process*/
+            if($install_local === true){
+              $status = 'success';
+              $msg = 'Successfully installed.';
+            }else{
+              $status = 'failed';
+              $msg = 'There was an error installing';
+              }
+            }
+            $json = array(
+              'status' => $status,
+              'msg' => $msg,
+            );
+            wp_send_json($json);
+          }		
+        }
+      }
+      wp_die();
   }
 
-  // WIP: FUNCTION TO INSTALL LOCAL PLUGINS ----------------------------------------------- //////
-
-  /*public function extractLocalPlugins() {
-
-
-    if (isset($_POST['my_directory']) && isset($_POST['extract_directory']) && isset($_POST['upload']))  {
-      define("UPLOAD_DIR", $_POST['my_directory']);
-      $extract_directory = $_POST['extract_directory'];
-      echo $extract_directory .'</br>';
-      echo $mydirectory .'</br>';
-
-      if (!empty($_FILES["zip_files"])) {
-        $myFile = $_FILES["zip_files"];
-    
-        if ($myFile["error"] !== UPLOAD_ERR_OK) {
-            echo "<p>An error occurred.</p>";
-            exit;
-        }
-    
-        // ensure a safe filename
-        $name = preg_replace("/[^A-Z0-9._-]/i", "_", $myFile["name"]);
-    
-        // don't overwrite an existing file
-        $i = 0;
-        $parts = pathinfo($name);
-        while (file_exists(UPLOAD_DIR . $name)) {
-            $i++;
-            $name = $parts["filename"] . "-" . $i . "." . $parts["extension"];
-        }
-    
-        // preserve file from temporary directory
-        $success = move_uploaded_file($myFile["tmp_name"],
-            UPLOAD_DIR . $name);
-        if (!$success) { 
-            echo "<p>Unable to save file.</p>";
-            exit;
-        }
-    
-        // set proper permissions on the new file
-        chmod(UPLOAD_DIR . $name, 0644);
-      }
-          // directory we want to scan
-      $dircontents = scandir($mydirectory);
-    
-      // list the contents
-      foreach ($dircontents as $file) {
-        $extension = pathinfo($file, PATHINFO_EXTENSION);
-        if ($extension == 'zip') {
-          echo "<li>$file</li>";
-          $res = $zip->open($file);
-          if ($res === TRUE) {
-            $zip->extractTo($extract_directory);
-            $zip->close();
-            echo 'ok';
-          } else {
-            echo 'failed';
-          }
-        }  
-      }
-    }
-    wp_die();
-  }*/
 
   // Function to download the plugin.
   public function PluginDownload($url, $path){
@@ -296,20 +277,6 @@ class PluginInstaller{
     }
     else
     	return false;
-  }
-
-  public function viewZipFiles() {
-
-    $dircontents = scandir($this->mydirectory);
-    
-    // list the contents
-    foreach ($dircontents as $file) {
-      $extension = pathinfo($file, PATHINFO_EXTENSION);
-      if ($extension == 'zip') {
-        echo "<li>$file</li>";
-      }
-    }
-    return $this;
   }
   
   public function enqueue_scripts() {
