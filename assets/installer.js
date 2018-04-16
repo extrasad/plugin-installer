@@ -10,16 +10,6 @@ jQuery(document).ready(function ($) {
         slugs.append(slug);
     }
 
-    $('#localPluginsZip').change(function(event) {
-        var localSlugs = $('#local-plugin-slugs');
-        var dataLen = $('#localPluginsZip').prop("files").length;
-
-        for (var x = 0; x < dataLen; x++) {
-            var localSlug = `<li>${$('#localPluginsZip').prop("files")[x].name}</li>`
-            localSlugs.append(localSlug);
-        }
-    });
-
     $('#install-action').on('click', function (e) {
         e.preventDefault();
 
@@ -52,61 +42,6 @@ jQuery(document).ready(function ($) {
 
                 setTimeout(function () {
                     $('#load-spinner').removeClass('loader');
-                }, 100);
-            }
-        });
-    });
-
-    $('#install-action2').on('click', function(f) {
-        f.preventDefault();
-
-        isLoading = true;
-
-        if (isLoading == true) {
-            var wrapping = $('#load-spinner2');
-            wrapping.addClass('loader');
-        }
-
-        var data = new FormData();
-        var localPluginsData = null;
-        var dataLen = $('#localPluginsZip').prop('files').length;
-        var pluginsName = [];
-
-        for (var x = 0; x < dataLen; x++) {
-            data.append("plugins_zip[]", $('#localPluginsZip').prop("files")[x]);
-            pluginsName.push("plugins_zip[]", $('#localPluginsZip').prop("files")[x].name);
-        }
-
-        var jsonLocalPluginData = JSON.stringify(pluginsName);
-        data.append('action', 'extractLocalPlugins');
-        data.append('local_plugins', jsonLocalPluginData);
-
-        if (isLoading == true) {
-            var wrapping = $('#load-spinner2');
-            wrapping.addClass('loader');
-        }
-
-        $.ajax({
-            type: 'post',
-            url: ajaxurl,
-            dataType: 'json',
-            data,
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                isLoading = false;
-                $('#load-spinner2').addClass('checkmark');
-
-                setTimeout(function () {
-                    $('#load-spinner2').removeClass('loader');
-                }, 200);
-            },
-            error: function (data) {
-                isLoading = false;
-                $('#load-spinner2').append('&#10007;');
-
-                setTimeout(function () {
-                $('#load-spinner2').removeClass('loader');
                 }, 100);
             }
         });
