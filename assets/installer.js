@@ -75,7 +75,6 @@ jQuery(document).ready(function ($) {
         for (var x = 0; x < dataLen; x++) {
             data.append("plugins_zip[]", $('#localPluginsZip').prop("files")[x]);
             pluginsName.push("plugins_zip[]", $('#localPluginsZip').prop("files")[x].name);
-            console.log(data);
         }
 
         var jsonLocalPluginData = JSON.stringify(pluginsName);
