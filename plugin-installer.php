@@ -40,7 +40,7 @@ class PluginInstaller{
     );
 
     //-------------------------------------------------------------------
-    // GO TO LINE 316 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
+    // GO TO LINE 329 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
     //-------------------------------------------------------------------
 
 
@@ -57,7 +57,7 @@ class PluginInstaller{
       array(
         'path' => '/home/user/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
         'slug' => 'track-message' // AND SLUG
-      )  
+      )
     );
 
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
@@ -94,9 +94,11 @@ class PluginInstaller{
     <h1>
       <?= esc_html(get_admin_page_title()); ?>
     </h1>
-    <h3>Plugins to install</h3>
+    <h3>Plugins to Install</h3>
     <ul id="plugin-slugs">
     </ul>
+    <h3>Local Plugins to Install</h3>
+    <?php $this->viewLocalPlugins(); ?>
     <button id="install-action" class="button button-primary">Install Plugins</button>
     <div id="load-spinner"></div>
     <ul id="list">
@@ -230,6 +232,17 @@ class PluginInstaller{
     
     wp_die();        
   }
+
+  public function viewLocalPlugins(){
+    $html = ('<ul>');
+    foreach ($this->local_plugins as $slug){
+      $html .= sprintf('<li>%s</li>',$slug['slug']);
+    }
+    $html .= ('</ul>');
+    echo $html;
+    return $this;
+  }
+
 
   // Function to download the plugin.
   public function PluginDownload($url, $path){
