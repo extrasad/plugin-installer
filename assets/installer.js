@@ -28,7 +28,13 @@ jQuery(document).ready(function ($) {
                 'plugins': plugins,
             },
             success: function (data) {
-                $('#list').append(`<li>All plugins were successfully installed</li>`)
+                
+                if (data.success){
+                    data.msg.map((item) => {
+                        $('#list').append(`<li>${item}<span class="checkmark"></span></li>`);
+                    });
+                }
+                
 
                 isLoading = false;
                 $('#load-spinner').addClass('checkmark');

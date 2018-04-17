@@ -38,12 +38,13 @@ class PluginInstaller{
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => true
     );
+
     //-------------------------------------------------------------------
-    // GO TO LINE 311 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
+    // GO TO LINE 316 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
     //-------------------------------------------------------------------
 
 
-     //-------------------------------------------------------------------
+    //-------------------------------------------------------------------
     // THIS SECTION IS FOR LOCAL PLUGINS INSTALLATION LIKE ZIP FILES
     //-------------------------------------------------------------------
     /* Use this array to determinate the local or private plugins that will
@@ -53,15 +54,11 @@ class PluginInstaller{
     Full example, insert this for each plugin to include*/
     
     $this->local_plugins = array(
-    /*  array(
-        'path' => '/home/user/track-message.zip',
-        'slug' => 'track-message'
-      ),
       array(
-        'path' => '/home/user/cookie-notice.1.2.42.zip',
-        'slug' => 'cookie-notice' 
-      )    */
-      );
+        'path' => '/home/user/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
+        'slug' => 'track-message' // AND SLUG
+      )  
+    );
 
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
@@ -155,12 +152,16 @@ class PluginInstaller{
           /* Checking if the unzip process was successful or failed to
           continue the process*/
 
+          $installed_plugin = null;
+
           if ($unpack === true){
             $this->plugin_folder = ("/".$this->api->slug);
             $var = get_plugins($this->plugin_folder);
             foreach(array_keys($var) as $key){
               $this->install = $this->plugin_folder."/".$key;
             }
+
+            $plugin_name = basename($installed_plugin, '.php');
 
             $install = $this->PluginActivate($this->install);
           
@@ -170,13 +171,13 @@ class PluginInstaller{
             if($install === true) {
               $success = 'success';
               array_push($json['success'],$success);
-              $msg = $install.' was successfully installed. bleble';
+              $msg = $plugin_name.' was successfully installed. bleble';
               array_push($json['msg'],$msg);
 
             } else{
               $failed = 'failed';
               array_push($json['failed'],$failed);
-              $msg = 'bleble There was an error installing '.$install;
+              $msg = 'bleble There was an error installing '.$plugin_name;
               array_push($json['msg'],$msg);
             }
           }
@@ -192,28 +193,32 @@ class PluginInstaller{
           
           /* Checking if the unzip process was successful or failed to
           continue the process*/
-          
+          $installed_plugin = null;
+
           if($unpack_local === true){
             $this->plugin_folder_local = ("/".$plugins['slug']);
             $var = get_plugins($this->plugin_folder_local);
             foreach(array_keys($var) as $key){
+              $installed_plugin = $key;
               $this->install_local = $this->plugin_folder_local."/".$key;
             }
+
+            $plugin_name = basename($installed_plugin, '.php');
 
             $install_local = $this->PluginActivate($this->install_local);
             
             /* Checking if the install process was successful or failed to
             finish the process*/
 
-            if($install_local === true){
+            if($plugin_name == true){
               $success = 'success';
               array_push($json['success'],$success);
-              $msg = $install_local.' was successfully installed. blabla';
+              $msg = $plugin_name.' '.'was successfully installed.';
               array_push($json['msg'],$msg);
             }else{
               $failed = 'failed';
               array_push($json['failed'],$failed);
-              $msg = 'There was an error installing'. $install_local .'.';
+              $msg = 'There was an error installing'.' '.$plugin_name .'.';
               array_push($json['msg'],$msg);
             }
           }	
@@ -221,7 +226,7 @@ class PluginInstaller{
       }
     }
     
-    echo json_encode($json);
+    wp_send_json($json);
     
     wp_die();        
   }
@@ -318,9 +323,8 @@ class PluginInstaller{
         ------
         installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
         Example : 'jetpack', 'uk-cookie-consent' */
-        // UNCOMMENT ARRAY BELOW IF YOU WANT TO INSTALL PLUGINS FROM PLUGINS REPOSITORIES
         'plugins' => array(
-         ''
+         'wordpress-seo' // REPLACE WITH THE SLUG FOR THE PLUGIN YOU WANT TO INSTALL
         )
       ));
 
