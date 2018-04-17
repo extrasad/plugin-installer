@@ -39,27 +39,30 @@ class PluginInstaller{
       'preserve_zip' => true
     );
     //-------------------------------------------------------------------
-    // GO TO LINE 333 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
+    // GO TO LINE 311 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
+    //-------------------------------------------------------------------
+
+
+     //-------------------------------------------------------------------
+    // THIS SECTION IS FOR LOCAL PLUGINS INSTALLATION LIKE ZIP FILES
     //-------------------------------------------------------------------
     /* Use this array to determinate the local or private plugins that will
     be downloaded, installed and activated. Provide the array with the
     full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
     and with the slug of the plugin, example : 'wordpress-seo'.
-    Full example, insert this for each plugin to includ*/
+    Full example, insert this for each plugin to include*/
     
-    $this->local_plugins=array(
-      array(
-          'path' => '/home/abdiangel/track-message.zip',
-          'slug' => 'track-message'
+    $this->local_plugins = array(
+    /*  array(
+        'path' => '/home/user/track-message.zip',
+        'slug' => 'track-message'
       ),
       array(
-        'path' => '/home/abdiangel/cookie-notice.1.2.42.zip',
-        'slug' => 'track-message' 
-      )    
+        'path' => '/home/user/cookie-notice.1.2.42.zip',
+        'slug' => 'cookie-notice' 
+      )    */
       );
 
-
-		//Uncomment the line below if you want to use the plugin.
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
     add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
@@ -306,11 +309,18 @@ class PluginInstaller{
     wp_localize_script(
       'ajax-script', 'ajax_object', array(
         /* Use this array to determinate the plugins that will be downloaded,
+        If you don't want to install plugins from repositories leave in blank the array
+        like this 
+        ------
+        'plugins' => array(
+          ''
+        )
+        ------
         installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
         Example : 'jetpack', 'uk-cookie-consent' */
         // UNCOMMENT ARRAY BELOW IF YOU WANT TO INSTALL PLUGINS FROM PLUGINS REPOSITORIES
         'plugins' => array(
-         'jetpack','wordpress-seo'
+         ''
         )
       ));
 
