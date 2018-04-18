@@ -55,7 +55,7 @@ class PluginInstaller{
     
     $this->local_plugins = array(
       array(
-        'path' => '/home/user/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
+        'path' => '/home/abdiangel/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
         'slug' => 'track-message' // AND SLUG
       )
     );
@@ -160,6 +160,7 @@ class PluginInstaller{
             $this->plugin_folder = ("/".$this->api->slug);
             $var = get_plugins($this->plugin_folder);
             foreach(array_keys($var) as $key){
+              $installed_plugin = $key;
               $this->install = $this->plugin_folder."/".$key;
             }
 
@@ -170,16 +171,16 @@ class PluginInstaller{
             /* Checking if the install process was successful or failed to
           finish the process*/
 
-            if($install === true) {
+            if($plugin_name == true) {
               $success = 'success';
               array_push($json['success'],$success);
-              $msg = $plugin_name.' was successfully installed. bleble';
+              $msg = $plugin.' was successfully installed.';
               array_push($json['msg'],$msg);
 
             } else{
               $failed = 'failed';
               array_push($json['failed'],$failed);
-              $msg = 'bleble There was an error installing '.$plugin_name;
+              $msg = 'There was an error installing'.' '.$plugin;
               array_push($json['msg'],$msg);
             }
           }
@@ -195,32 +196,32 @@ class PluginInstaller{
           
           /* Checking if the unzip process was successful or failed to
           continue the process*/
-          $installed_plugin = null;
+          $installed_local_plugin = null;
 
           if($unpack_local === true){
             $this->plugin_folder_local = ("/".$plugins['slug']);
             $var = get_plugins($this->plugin_folder_local);
             foreach(array_keys($var) as $key){
-              $installed_plugin = $key;
+              $installed_local_plugin = $key;
               $this->install_local = $this->plugin_folder_local."/".$key;
             }
 
-            $plugin_name = basename($installed_plugin, '.php');
+            $local_plugin_name = basename($installed_local_plugin, '.php');
 
             $install_local = $this->PluginActivate($this->install_local);
             
             /* Checking if the install process was successful or failed to
             finish the process*/
 
-            if($plugin_name == true){
+            if($local_plugin_name == true){
               $success = 'success';
               array_push($json['success'],$success);
-              $msg = $plugin_name.' '.'was successfully installed.';
+              $msg = $local_plugin_name.' '.'was successfully installed.';
               array_push($json['msg'],$msg);
             }else{
               $failed = 'failed';
               array_push($json['failed'],$failed);
-              $msg = 'There was an error installing'.' '.$plugin_name .'.';
+              $msg = 'There was an error installing'.' '.$local_plugin_name .'.';
               array_push($json['msg'],$msg);
             }
           }	
