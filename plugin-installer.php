@@ -40,31 +40,31 @@ class PluginInstaller{
     );
 
     //-------------------------------------------------------------------
-    // GO TO LINE 329 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL
+    // GO TO LINE 330 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL.
     //-------------------------------------------------------------------
 
 
     //-------------------------------------------------------------------
-    // THIS SECTION IS FOR LOCAL PLUGINS INSTALLATION LIKE ZIP FILES
+    // LOCAL PLUGINS INSTALLATION (.ZIP FILES).
     //-------------------------------------------------------------------
     /* Use this array to determinate the local or private plugins that will
     be downloaded, installed and activated. Provide the array with the
     full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
     and with the slug of the plugin, example : 'wordpress-seo'.
-    Full example, insert this for each plugin to include*/
+    Full example, insert this for each plugin to include */
     
     $this->local_plugins = array(
       array(
-        'path' => '/home/abdiangel/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
+        'path' => '/home/user/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
         'slug' => 'track-message' // AND SLUG
       )
     );
 
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
-    add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins') );
-    add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins') );
-    add_filter( "plugin_action_links_$plugin", array($this, 'customSettingsLink' ));
+    add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins' ));
+    add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins' ));
+    add_filter( "plugin_action_links_$plugin", array( $this, 'customSettingsLink' ));
   }
   
     // Main menu link
