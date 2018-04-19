@@ -22,124 +22,229 @@ if ( ! function_exists( 'add_action' ) ) {
 
 class PluginInstaller{
 
-	private $plugins;
   private $install;
   private $install_local;
-	private $api;
+  private $api;
   private $plugin_folder;
-  private $local_plugins;
   private $plugin_folder_local;
   private $local_args;
+  private $local_plugins;
 
 
   public function __construct(){
+    $plugin = plugin_basename( __FILE__ );
 		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     $this->local_args =  array(
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => true
     );
-		/* Use this array to determinate the plugins that will be downloaded,
-    installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
-    Example : 'jetpack', 'wordpress-seo' */
-		$this->plugins = array(
-      //'jetpack'
-    );
+
+    //-------------------------------------------------------------------
+    // GO TO LINE 330 FOR WORDPRESS REPOSITORIES PLUGIN DOWNLOAD/INSTALL.
+    //-------------------------------------------------------------------
+
+
+    //-------------------------------------------------------------------
+    // LOCAL PLUGINS INSTALLATION (.ZIP FILES).
+    //-------------------------------------------------------------------
     /* Use this array to determinate the local or private plugins that will
     be downloaded, installed and activated. Provide the array with the
     full path of the file, example: '/home/user/wordpress-seo.7.1.zip',
     and with the slug of the plugin, example : 'wordpress-seo'.
-    Full example, insert this for each plugin to include: 
+    Full example, insert this for each plugin to include */
     
+    $this->local_plugins = array(
       array(
-      'path' => '/home/user/track-message.zip',
-      'slug' => 'track-message'
-      ),
-
-    By default is an empty array.
-    */
-    $this->local_plugins=array(
-    /*  array(
-        'path' => '/home/user/wordpress-seo.7.1.zip',
-        'slug' => 'wordpress-seo'
-        ) */    
+        'path' => '/home/user/track-message.zip', // REPLACE WITH YOUR PLUGIN PATH
+        'slug' => 'track-message' // AND SLUG
+      )
     );
 
-		//Uncomment the line below if you want to use the plugin.
-		add_action('init', $this->takePlugins($this->plugins, $this->local_plugins));		
-	}
+    add_action( 'admin_menu', array( $this, 'plginstMenu' ));
+    add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
+    add_action( 'wp_ajax_takePlugins', array( $this, 'takePlugins' ));
+    add_action( 'wp_ajax_extractLocalPlugins', array( $this, 'extractLocalPlugins' ));
+    add_filter( "plugin_action_links_$plugin", array( $this, 'customSettingsLink' ));
+  }
+  
+    // Main menu link
+  public function customSettingsLink($links) {
+    $link = (admin_url('/options-general.php?page=plugin-installer')); 
+    $settings_link = sprintf('<a href="%s">' .(esc_html( 'Settings')) . '</a>', esc_url($link));
+    array_push($links, $settings_link);
+      return $links;
+    }
+
+  //Main Menu
+
+  public function plginstMenu(){
+    add_options_page( 'Plugin Installer', 
+    'Plugin Installer', 
+    'manage_options', 
+    'plugin-installer', 
+    array($this, 'plginstOptionsPage'));
+  }
+
+  public function plginstOptionsPage() {
+    if (!current_user_can('manage_options')) {
+      return;
+    }
+    ?>
+  <div class="wrap">
+    <h1>
+      <?= esc_html(get_admin_page_title()); ?>
+    </h1>
+    <h3>Plugins to Install</h3>
+    <ul id="plugin-slugs">
+    </ul>
+    <h3>Local Plugins to Install</h3>
+    <?php $this->viewLocalPlugins(); ?>
+    <button id="install-action" class="button button-primary">Install Plugins</button>
+    <div id="load-spinner"></div>
+    <ul id="list">
+    </ul>
+  </div>
+  <?php
+    wp_die();
+  }
 
   // Main plugin function.
-  public function takePlugins($plugins, $local_plugins){
+  public function takePlugins(){ 
     include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
-    $success = '<p> plugin installed and activated </p>';
-    $failure ='<p> cannot install plugin </p>';
     $args = array(
       'path' => ABSPATH.'wp-content/plugins/',
       'preserve_zip' => false
     );
-    /*Checking if the list of plugins is empty, if isn't empty
-    execute the request to the API of wordpress.org*/
-    if(!empty($this->plugins)){
-		  foreach($this->plugins as $plugin){
-			  $this->api = plugins_api( 'plugin_information', array(
-				  'slug' => $plugin,
-				  'fields' => array(
-						'downloadlink' => true,
-						'slug' => true,
-				  ),
-        ));
-        // Try to download the plugin.
-        $download= $this->PluginDownload($this->api->download_link, $args['path'].$this->api->slug.'.zip');
-        /* Checking if the download process was successful or failed to
-        continue the process, if the download failed, the process will stop*/
-        if ($download === true){
-          $unpack = $this->PluginUnpack($args, $args['path'].$this->api->slug.'.zip');          
-        }
-        /* Checking if the unzip process was successful or failed to
-        continue the process*/
-        if ($unpack === true){
-          $this->plugin_folder = ("/".$this->api->slug);
-		      $var = get_plugins($this->plugin_folder);
-		      foreach(array_keys($var) as $key){
-            $this->install = $this->plugin_folder."/".$key;
-		      }
-          $install = $this->PluginActivate($this->install);
-        /* Checking if the install process was successful or failed to
-        finish the process*/
-          if($install === true){
-          echo $success;		
-          }else{
-            echo $failure;
+
+    $json = array(
+      'success' => array(),
+      'failed' => array(),
+      'msg' => array()
+    );
+
+    if(isset($_POST['plugins'])){
+
+      $plugins = $_POST['plugins'];
+
+      /*Checking if the list of plugins is empty, if isn't empty
+      execute the request to the API of wordpress.org*/
+
+      if(!empty($plugins)){
+        foreach($plugins as $plugin){
+            $this->api = plugins_api( 'plugin_information', array(
+              'slug' => $plugin,
+              'fields' => array(
+                'downloadlink
+                ' => true,
+                'slug' => true,
+              ),
+          ));
+
+          // Try to download the plugin.
+
+          $download= $this->PluginDownload($this->api->download_link, $args['path'].$this->api->slug.'.zip');
+          
+          /* Checking if the download process was successful or failed to
+          continue the process, if the download failed, the process will stop*/
+          
+          if ($download === true){
+            $unpack = $this->PluginUnpack($args, $args['path'].$this->api->slug.'.zip');          
           }
-        }
-      }		
-    }
-    /*Checking if the list of plugins is empty, if isn't empty
-    execute unzip process.*/
-    if(!empty($this->local_plugins)){
-      foreach($this->local_plugins as $key => $plugins){
-        $unpack_local= $this->PluginUnpack($this->local_args, $plugins['path']);
-        /* Checking if the unzip process was successful or failed to
-        continue the process*/
-        if($unpack_local === true){
-          $this->plugin_folder_local = ("/".$plugins['slug']);
-          $var = get_plugins($this->plugin_folder_local);
-		      foreach(array_keys($var) as $key){
-            $this->install_local = $this->plugin_folder_local."/".$key;
-          }
-          $install_local = $this->PluginActivate($this->install_local);
-          /* Checking if the install process was successful or failed to
+          
+          /* Checking if the unzip process was successful or failed to
+          continue the process*/
+
+          $installed_plugin = null;
+
+          if ($unpack === true){
+            $this->plugin_folder = ("/".$this->api->slug);
+            $var = get_plugins($this->plugin_folder);
+            foreach(array_keys($var) as $key){
+              $installed_plugin = $key;
+              $this->install = $this->plugin_folder."/".$key;
+            }
+
+            $plugin_name = basename($installed_plugin, '.php');
+
+            $install = $this->PluginActivate($this->install);
+          
+            /* Checking if the install process was successful or failed to
           finish the process*/
-          if($install_local === true){
-          echo $success;		
-          }else{
-            echo $failure;
+
+            if($plugin_name == true) {
+              $success = 'success';
+              array_push($json['success'],$success);
+              $msg = $plugin.' was successfully installed.';
+              array_push($json['msg'],$msg);
+
+            } else{
+              $failed = 'failed';
+              array_push($json['failed'],$failed);
+              $msg = 'There was an error installing'.' '.$plugin;
+              array_push($json['msg'],$msg);
             }
           }
-        }						
-      }		
+        }		
+      }
+
+      /*Checking if the list of plugins is empty, if isn't empty
+      execute unzip process.*/
+
+      if(!empty($this->local_plugins)){
+        foreach($this->local_plugins as $key => $plugins){
+          $unpack_local= $this->PluginUnpack($this->local_args, $plugins['path']);
+          
+          /* Checking if the unzip process was successful or failed to
+          continue the process*/
+          $installed_local_plugin = null;
+
+          if($unpack_local === true){
+            $this->plugin_folder_local = ("/".$plugins['slug']);
+            $var = get_plugins($this->plugin_folder_local);
+            foreach(array_keys($var) as $key){
+              $installed_local_plugin = $key;
+              $this->install_local = $this->plugin_folder_local."/".$key;
+            }
+
+            $local_plugin_name = basename($installed_local_plugin, '.php');
+
+            $install_local = $this->PluginActivate($this->install_local);
+            
+            /* Checking if the install process was successful or failed to
+            finish the process*/
+
+            if($local_plugin_name == true){
+              $success = 'success';
+              array_push($json['success'],$success);
+              $msg = $local_plugin_name.' '.'was successfully installed.';
+              array_push($json['msg'],$msg);
+            }else{
+              $failed = 'failed';
+              array_push($json['failed'],$failed);
+              $msg = 'There was an error installing'.' '.$local_plugin_name .'.';
+              array_push($json['msg'],$msg);
+            }
+          }	
+        }		
+      }
     }
-  
+    
+    wp_send_json($json);
+    
+    wp_die();        
+  }
+
+  public function viewLocalPlugins(){
+    $html = ('<ul>');
+    foreach ($this->local_plugins as $slug){
+      $html .= sprintf('<li>%s</li>',$slug['slug']);
+    }
+    $html .= ('</ul>');
+    echo $html;
+    return $this;
+  }
+
+
   // Function to download the plugin.
   public function PluginDownload($url, $path){
       $ch = curl_init($url);
@@ -211,6 +316,33 @@ class PluginInstaller{
     }
     else
     	return false;
+  }
+  
+  public function enqueue_scripts() {
+    wp_enqueue_script(
+      'ajax-script',
+      plugin_dir_url( __FILE__ ) . 'assets/installer.js',
+      array( 'jquery' )
+    );
+
+    wp_localize_script(
+      'ajax-script', 'ajax_object', array(
+        /* Use this array to determinate the plugins that will be downloaded,
+        If you don't want to install plugins from repositories leave in blank the array
+        like this 
+        ------
+        'plugins' => array(
+          ''
+        )
+        ------
+        installed and activated. USE THE PLUGIN'S SLUG IN THE ARRAY. 
+        Example : 'jetpack', 'uk-cookie-consent' */
+        'plugins' => array(
+         'wordpress-seo' // REPLACE WITH THE SLUG FOR THE PLUGIN YOU WANT TO INSTALL
+        )
+      ));
+
+    wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
   }
 }
 
