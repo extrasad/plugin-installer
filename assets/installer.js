@@ -28,14 +28,11 @@ jQuery(document).ready(function ($) {
                 'plugins': plugins,
             },
             success: function (data) {
-                
-                if (data.success){
-                    data.msg.map((item) => {
-                        $('#list').append(`<li>${item}<span class="checkmark"></span></li>`);
-                    });
-                }
-                
 
+                data.msg.map((item) => {
+                    $('#list').append(`<li>${item}</li>`);
+                });
+                
                 isLoading = false;
                 $('#load-spinner').addClass('checkmark');
 
@@ -46,8 +43,8 @@ jQuery(document).ready(function ($) {
             error: function (data) {
 
                 isLoading = false;
-                $('#load-spinner').append('&#10007;');
-                $('#list').append('<li>One or more plugins were not installed properly</li>');
+                $('#load-spinner').append('<span class="x-cancel">&#10007;</span>');
+                $('#list').append('<li>Check if plugins that you tried to install where already installed, if you provided a wrong files path or if you wrote a bad slug for repositories\' plugins</li>');
 
                 setTimeout(function () {
                     $('#load-spinner').removeClass('loader');

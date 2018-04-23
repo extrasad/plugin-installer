@@ -31,7 +31,14 @@
     left: 10px;
 }
 
-#load-spinner, #load-spinner2 {
+#load-spinner {
+    display: inline-block;
+    color: red;
+    font-size: 20px;
+    padding-top: .3rem;
+}
+
+.x-cancel {
     display: inline-block;
     color: red;
     font-size: 20px;
