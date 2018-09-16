@@ -49,7 +49,7 @@ class PluginInstaller{
     computer/server if you don't specify the root directory where the plugins are it will throw an error. 
     */
 
-    $this->my_directory = '/opt/lampp/htdocs/wp-example/wp-content/plugins/'; //REPLACE THIS WITH THE ACTUAL DIRECTORY FOR YOUR LOCAL PLUGINS
+    $this->my_directory = '/opt/lampp/htdocs/dekasa/wp-content/plugins/'; //REPLACE THIS WITH THE ACTUAL DIRECTORY FOR YOUR LOCAL PLUGINS
 
     add_action( 'admin_menu', array( $this, 'plginstMenu' ));
     add_action( 'admin_enqueue_scripts',array( $this, 'enqueue_scripts' ));
@@ -92,8 +92,12 @@ class PluginInstaller{
     <ul id="plugin-slugs">
     </ul>
 
-    <h3>Local Plugins to Install</h3>
+    <input type="text" id="input-slug" value="">
 
+    <button id="add-action" class="button button-secondary">Add Plugin</button>
+    <p id="required-block" hidden>No ha especificado un plugin para agregar.</p>
+
+    <h3>Local Plugins to Install</h3>
     <?php $this->viewLocalPlugins(); ?>
 
     <button id="install-action" class="button button-primary">Install Plugins</button>
@@ -104,7 +108,6 @@ class PluginInstaller{
     
   </div>
   <?php
-    wp_die();
   }
 
   // Main plugin function.
@@ -339,8 +342,11 @@ class PluginInstaller{
           'wordpress-seo','jetpack','uk-cookie-consent'
         )
         ------ */
-        'plugins' => array()
-      ));
+        'plugins' => array(
+          'wordpress-seo','jetpack','uk-cookie-consent'
+        ) 
+      )
+    );
 
     wp_enqueue_style( 'plugin-installer', plugin_dir_url( __FILE__ ) . 'assets/installer.css');
   }

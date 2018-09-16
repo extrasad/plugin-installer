@@ -1,22 +1,58 @@
 jQuery(document).ready(function ($) {
 
     var isLoading = false;
-    var plugins = ajax_object.plugins;
+    var pluginsRecommended = ajax_object.plugins;
     var slugs = $('#plugin-slugs');
-
-    for (var i = 0; i < plugins.length; i++) {
-        var slug = `<li>${plugins[i]}</li>`
+    var addRepositoryPluginBtn = $('#add-action');
+    var inputSlug = $('#input-slug');
+    var requiredBlock = $('#required-block');
+    
+    for (var i = 0; i < pluginsRecommended.length; i++) {
+        var slug = `<li><label for="${pluginsRecommended[i]}">${pluginsRecommended[i]}</label><input type="checkbox" value="${pluginsRecommended[i]}" id="${pluginsRecommended[i]}" class="plugin-slug-selector"></li>`
         slugs.append(slug);
+    }
+
+    function addRepositoryPlugin() {
+        const slug = inputSlug.val();
+
+        if (!slug) {
+            requiredBlock.show();
+        } else {
+            requiredBlock.hide();
+            slugs.append(`
+                <li>
+                    <label for="${slug}">${slug}</label>
+                    <input type="checkbox" value="${slug}" id="${slug}">
+                </li>`
+            );
+        }
+    }
+
+    addRepositoryPluginBtn.on('click', function() {
+        addRepositoryPlugin();
+    });
+
+    function getPlugins() {
+        let plugins = [];
+
+        $(".plugin-slug-selector:checked").each(function(){
+            plugins.push($(this).val());
+        });
+
+        return plugins;
     }
 
     $('#install-action').on('click', function (e) {
         e.preventDefault();
+
+        const plugins = getPlugins();
 
         isLoading = true;
 
         if (isLoading == true) {
             var wrapping = $('#load-spinner');
             wrapping.addClass('loader');
+            $(this).prop('disabled', true);
         }
 
         $.ajax({
@@ -38,6 +74,7 @@ jQuery(document).ready(function ($) {
 
                 setTimeout(function () {
                     $('#load-spinner').removeClass('loader');
+                    $('#install-action').prop('disabled', false);
                 }, 200);
             },
             error: function (data) {
