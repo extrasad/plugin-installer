@@ -48,12 +48,7 @@
     if ( !defined('PLUGIN_INSTALLER_PLUGIN_URI') ) {
         define ( 'PLUGIN_INSTALLER_PLUGIN_URI', plugin_dir_url(__FILE__));
     }
-    // if ( !defined('CARACTERISTICAS_ICON_PLUGIN_FILES_URI') ) {
-    //     define ( 'CARACTERISTICAS_ICON_PLUGIN_FILES_URI', get_site_url().'/wp-content/uploads/wp-caracteristicas-plugin/');
-    //     }
-    // if ( !defined('CARACTERISTICAS_ICON_PLUGIN_FILES_DIR') ) {
-    //     define ( 'CARACTERISTICAS_ICON_PLUGIN_FILES_DIR', ABSPATH.'wp-content/uploads/wp-caracteristicas-plugin/');
-    //     }
+
   /**
    * Begins execution of the plugin.
    *

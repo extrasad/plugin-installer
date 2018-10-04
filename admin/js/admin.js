@@ -9,6 +9,7 @@ jQuery(document).ready(function ($) {
 	const inputUrl = $('#url-request');
 	const downloadFromUrlBtn = $('#download-button');
 	const inputTextContainer = $('#url-request-container');
+	const actionBtns = $('.pinst__button')
 	let isLoading = true;
 
 
@@ -55,91 +56,25 @@ jQuery(document).ready(function ($) {
 			} else {
 				warningPlugin.remove();
 
-				preDownloadFromUrl(slugFromUrl);
+				getPluginInfo(slugFromUrl, true);
 			}
 		}
-	}
-
-	function preDownloadFromUrl(slugFromUrl) {
-
-		fetch('https://api.wordpress.org/plugins/info/1.0/' + slugFromUrl + '.json')
-			.then(function(response) {
-				return response.json();
-			})
-			.then(function(res) {
-				const name = res.name;
-				const downloadLink = res.download_link;
-				const slug = res.slug;
-				
-				installBtn.prop('disabled', false);
-				isLoading = false;
-				checkIsLoading();
-				downloadFromUrl(downloadLink, slug, name);
-			})
-			.catch(function(error) {
-				console.log('Hubo un problema con la petición Fetch:' + error);
-			});
-	}
-
-	function downloadFromUrl(downloadLink, slug, name) {
-
-		const data = {
-			'action': 'pinst_download_from_url',
-			'download_link': downloadLink,
-			'name': name,
-			'slug': slug
-		};
-		const reportArea = $('.pinst__report');
-		let isLoading = true;
-
-		if (isLoading === true) {
-
-			installBtn.prop('disabled', true);
-		}
-
-
-		$.ajax({
-			type: 'post',
-			url: ajaxurl,
-			dataType: 'json',
-			data,
-			success: function (response) {
-				isLoading = false;
-
-				if (typeof response[0] === 'string') {
-
-					reportArea.append('<p>' + response[0] + '</p>');
-
-			 	}	else {
-					console.log(response[0]);
-				}
-
-				if(!isLoading) {
-					installBtn.prop('disabled', false);
-				}
-			},
-			error: function (response) {
-				isLoading = false;
-
-				if(!isLoading) {
-
-					installBtn.prop('disabled', false);
-				}
-			}
-		});
 	}
 
 	function checkIsLoading() {
 		if (!isLoading) {
 			ladingSpinner.hide();
+			actionBtns.prop('disabled', false);
 		} else {
 			ladingSpinner.show();
+			actionBtns.prop('disabled', true);
 		}
 	}
 
-	function getPluginInfo(slug) {
+	function getPluginInfo(slug, externalUrl) {
 
 		const parentList = pluginsListNode;
+		const conditionalAjax = !externalUrl ? false : true;
 
 		installBtn.prop('disabled', true);
 
@@ -152,19 +87,28 @@ jQuery(document).ready(function ($) {
 				const downloadLink = res.download_link;
 				const slug = res.slug;
 
-				parentList
-				.append(`
-					<li class="pinst__item" data-slug="${slug}" data-link="${downloadLink}" data-name="${name}">
-						<span>${name}</span>
-					</li>
-				`);
-				
-				installBtn.prop('disabled', false);
-				isLoading = false;
-				checkIsLoading();
+				if (!conditionalAjax) {
+
+					parentList
+					.append(`
+						<li class="pinst__item" data-slug="${slug}" data-link="${downloadLink}" data-name="${name}">
+							<span>${name}</span>
+						</li>
+					`);
+					
+					installBtn.prop('disabled', false);
+					isLoading = false;
+					checkIsLoading();
+
+				} else {
+
+					installPlugin(downloadLink, slug, name, false);
+
+				}
+
 			})
 			.catch(function(error) {
-				console.log('Hubo un problema con la petición Fetch:' + error);
+				console.log('Hubo un problema con la petición fetch:' + error);
 			});
 	}
 
@@ -186,7 +130,15 @@ jQuery(document).ready(function ($) {
 
 	function installPlugin(downloadLink, slug, name, element) {
 		
-		const thisEl = $(element);
+		let thisEl;
+
+		if (!element) {
+			thisEl = $('.pinst__external-download');
+		} else {
+			thisEl = $(element);
+		}
+
+		const pluginName = name;
 		const data = {
 			'action': 'pinst_process_plugin',
 			'download_link': downloadLink,
@@ -218,16 +170,18 @@ jQuery(document).ready(function ($) {
 			dataType: 'json',
 			data,
 			success: function (response) {
-				isLoading = false;
-				const loadingSpinner = thisEl.find('.showbox--inline');
-				if (typeof response[0] === 'string') {
-					reportArea.append('<p>' + response[0] + '</p>');
+				console.log(response);
 
-			 	}	else {
-					response[0].map(function(res, index) {
-						console.log(res);
-					});
+				const data = response[0];
+				const loadingSpinner = thisEl.find('.showbox--inline');
+
+				if (data.status === 'failed') {
+					reportArea.append('<p class="pinst__failed">' + data.msg + '</p>');
+				} else {
+					reportArea.append('<p class="pinst__success">' + data.msg + '</p>');
 				}
+
+				isLoading = false;
 
 				if(!isLoading) {
 					loadingSpinner.children().remove();
@@ -236,10 +190,14 @@ jQuery(document).ready(function ($) {
 					`);
 					installBtn.prop('disabled', false);
 				}
+
+				
 			},
 			error: function (response) {
 				isLoading = false;
 				const loadingSpinner = thisEl.find('.showbox showbox--inline');
+				
+				reportArea.append('<p class="pinst__failed">'+ pluginName + ' could not be installed due a bad connection with server.</p>');
 
 				if(!isLoading) {
 					loadingSpinner.children().remove();

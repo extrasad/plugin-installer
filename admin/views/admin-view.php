@@ -6,7 +6,7 @@
 
   <div class="pinst__main-panel">
     <div class="pinst__first-panel">
-      <h3>Plugins Instalados</h3>
+      <h3>Lista de Plugins</h3>
       <div class="pinst__plugins">
         <ul>
         </ul>
@@ -18,6 +18,9 @@
           </div>
         </div>
       </div>
+
+      <button type="button" id="install-button" class="pinst__button button button-primary">Install Plugins</button>
+    
     </div>
 
     <div class="pinst__second-panel">
@@ -30,11 +33,10 @@
     
       <h3>Or</h3>
     
-      <div class="pinst__input-group pinst__item">
+      <div class="pinst__input-group pinst__external-download">
         <button type="button" id="download-button" class="pinst__button button button-secondary">Download</button>
       </div>
     
-      <button type="button" id="install-button" class="pinst__button button button-primary">Install Plugins</button>
       <a class="pinst__link" href="https://www.thinkdifferent.es/plugins-permitidos">Ver lista de plugins a solicitar instalación nueva</a>
     </div>
   </div>

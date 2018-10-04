@@ -76,57 +76,6 @@
     }
 
     /**
-     * This function process slug from url to download checking the array of slugs
-     *
-     * @since 1.0.0
-     */
-
-    public function pinst_download_from_url() {
-
-      $json = [];
-
-      // Args to be used in the download and Unpack functionalities 
-      $args = array(
-        'path' => ABSPATH.'wp-content/plugins/',
-        'preserve_zip' => false
-      );
-
-      $plugin_unpacked = false;
-
-      if (isset($_POST['download_link']) && isset($_POST['name']) && isset($_POST['slug'])) {
-
-        $download_link = $_POST['download_link'];
-        $name = $_POST['name'];
-        $slug = $_POST['slug'];
-
-        $download = $this->pinst_download_plugin( $download_link, $args['path'] . $slug . '.zip');
-
-        /* Checking if the download process was successful or failed to
-        continue the process, if the download failed, the process will stop*/
-
-        if (!$download){
-
-          $msg = 'There was an error in downloading' . $name . '.';
-
-          array_push($json, $msg);
-
-        } else {
-          
-          $unpack = $this->pinst_unpack_plugin($args, $args['path'] . $slug . '.zip');
-          $plugin_unpacked = $unpack === true ? true : false;
-
-          $msg = $name . ' was installed successfully';
-
-          array_push($json, $msg);
-        }
-      }
-
-      wp_send_json($json);
-
-      wp_die();
-    }
-
-    /**
      * This function do the download and install process 
      *
      * @since 1.0.0
@@ -135,6 +84,7 @@
     public function pinst_process_plugin() {
 
       $json = [];
+      $unpack;
 
       // Args to be used in the download and Unpack functionalities 
       $args = array(
@@ -157,12 +107,16 @@
 
         if (!$download){
 
-          echo 'There was an error in downloading.';
+          $status = [
+            'status' => 'failed',
+            'msg' => 'You have bad internet connection. Check your connection and try again.',
+          ];
+          array_push($json, $status);
 
         } else {
           
           $unpack = $this->pinst_unpack_plugin($args, $args['path'] . $slug . '.zip');
-          $plugin_unpacked = $unpack === true ? true : false;
+          $plugin_unpacked = $unpack[0] === true ? true : false;
 
         }
       }
@@ -172,19 +126,40 @@
 
       if ($plugin_unpacked === true) {
 
-        $plugin_file = $this->get_plugin_file($name);
-        $plugin_file_path = $args['path'] . $plugin_file;
+        $status = [
+          'status' => 'success',
+          'msg' => $name.' '.'was installed successfully.'
+        ];
+
+        array_push($json, $status);
+
+        //This is for the same plan of activation !!
+
+        // $plugin_file = $this->get_plugin_file($name);
+        // $plugin_file_path = $args['path'] . $plugin_file;
+        // $data = get_plugin_data($plugin_file_path);
+
 
 
         /* Checking if the install process was successful or failed to
         finish the process*/
 
-        $activate = $this->pinst_activate_plugin($plugin_file_path);
+        /**ATTENTION IF YOU WANT TO ADD ACTIVATION FUNCIONALITY HERE YOU CAN DO IT */
+        
+        //$activate = $this->pinst_activate_plugin($plugin_file_path);
 
-        array_push($json, $activate);
+        //array_push($json, $activate);
 
       } else {
-        echo 'Plugin wasnt unpacked correctly';
+
+
+        $status = array(
+          'status' => 'failed',
+          'msg' => $name . $unpack[0]
+        );
+
+        array_push($json, $status);
+        
       }
 
       wp_send_json($json);
@@ -230,7 +205,6 @@
         return $status;
 			} else {
         $status = false;
-        echo 'You have bad internet connection. Check your connection and try again';
 			  return $status;
 			}
     }
@@ -242,7 +216,7 @@
       */
 
     public function pinst_unpack_plugin($args, $filename){
-      $status;
+      $status = [];
       $zip = zip_open($filename); 
       if(is_resource($zip)){
         while($entry = zip_read($zip))
@@ -264,7 +238,8 @@
                 mkdir($file_path);
                 chmod($file_path, 0777);
               }else{
-                echo '<p> Plugin is already installed. </p>';
+                $msg = 'Plugin is already installed';
+                array_push($status, $msg);
                 break;
               }
             }
@@ -278,10 +253,12 @@
       }
 
       if  (!$check_dir) {
-        $status = true;
+        $check = true;
+        array_push($status,$check);
         return $status;
       } else {
-        $status = false;
+        $check = false;
+        array_push($status,$check);
         return $status;
       }
     }
